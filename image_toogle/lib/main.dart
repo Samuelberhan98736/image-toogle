@@ -1,122 +1,292 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
+class MyApp extends StatefulWidget {
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
+  _MyAppState createState() => _MyAppState();
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+class _MyAppState extends State<MyApp> {
+  bool _isDarkMode = false;
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
+  // Toggle theme method
+  void _toggleTheme() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _isDarkMode = !_isDarkMode;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    return MaterialApp(
+      title: 'Image Toggle App',
+      theme: _isDarkMode 
+          ? ThemeData(
+              brightness: Brightness.dark,
+              primarySwatch: Colors.purple,
+              scaffoldBackgroundColor: Colors.grey[900],
+              appBarTheme: AppBarTheme(
+                backgroundColor: Colors.purple,
+                foregroundColor: Colors.white,
+              ),
+            )
+          : ThemeData(
+              brightness: Brightness.light,
+              primarySwatch: Colors.blue,
+              scaffoldBackgroundColor: Colors.white,
+              appBarTheme: AppBarTheme(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+            ),
+      home: ImageToggleScreen(
+        toggleTheme: _toggleTheme,
+        isDarkMode: _isDarkMode,
+      ),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class ImageToggleScreen extends StatefulWidget {
+  final VoidCallback toggleTheme;
+  final bool isDarkMode;
+
+  ImageToggleScreen({required this.toggleTheme, required this.isDarkMode});
+
+  @override
+  _ImageToggleScreenState createState() => _ImageToggleScreenState();
+}
+
+class _ImageToggleScreenState extends State<ImageToggleScreen>
+    with SingleTickerProviderStateMixin {
+  
+  // Boolean variable to track current image state
+  bool _isFirstImage = true;
+  
+  // Animation variables
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+
+  // Local asset image paths
+  final String _firstImagePath = 'assets/images/darwizzy.jpg';
+  final String _secondImagePath = 'assets/images/plane.jpg';
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // Initialize AnimationController
+    _animationController = AnimationController(
+      duration: Duration(milliseconds: 800),
+      vsync: this,
+    );
+    
+    // Create CurvedAnimation for smoother transition
+    _fadeAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+    
+    // Start with animation at full opacity
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  // Method to toggle image with animation
+  void _toggleImage() {
+    // Fade out current image
+    _animationController.reverse().then((_) {
+      // Change the image state
+      setState(() {
+        _isFirstImage = !_isFirstImage;
+      });
+      // Fade in new image
+      _animationController.forward();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text('Image Toggle App'),
+        actions: [
+          // Theme toggle button in app bar
+          IconButton(
+            icon: Icon(
+              widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            ),
+            onPressed: widget.toggleTheme,
+            tooltip: widget.isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          ),
+        ],
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text('You have pushed the button this many times:'),
+            // Title text
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Toggle Between Images',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: widget.isDarkMode ? Colors.white : Colors.black87,
+              ),
+            ),
+            SizedBox(height: 30),
+            
+            // Image display area with border
+            Container(
+              width: 320,
+              height: 220,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: widget.isDarkMode ? Colors.purple : Colors.blue,
+                  width: 3,
+                ),
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: Image.asset(
+                    _isFirstImage ? _firstImagePath : _secondImagePath,
+                    width: 300,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 300,
+                        height: 200,
+                        color: widget.isDarkMode ? Colors.grey[800] : Colors.grey[200],
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.broken_image,
+                              size: 50,
+                              color: widget.isDarkMode ? Colors.white54 : Colors.black54,
+                            ),
+                            Text(
+                              'Image ${_isFirstImage ? '1' : '2'} not found',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: widget.isDarkMode ? Colors.white54 : Colors.black54,
+                              ),
+                            ),
+                            Text(
+                              'Check assets folder',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: widget.isDarkMode ? Colors.white38 : Colors.black38,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            
+            SizedBox(height: 30),
+            
+            // Current image indicator
+            Text(
+              'Current: Image ${_isFirstImage ? '1' : '2'}',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: widget.isDarkMode ? Colors.white70 : Colors.black54,
+              ),
+            ),
+            
+            SizedBox(height: 30),
+            
+            // Toggle Image button
+            ElevatedButton(
+              onPressed: _toggleImage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: widget.isDarkMode ? Colors.purple : Colors.blue,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                elevation: 6,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.swap_horiz, size: 24),
+                  SizedBox(width: 10),
+                  Text(
+                    'Toggle Image',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            
+            SizedBox(height: 40),
+            
+            // Theme toggle button
+            OutlinedButton(
+              onPressed: widget.toggleTheme,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: widget.isDarkMode ? Colors.purple : Colors.blue,
+                side: BorderSide(
+                  color: widget.isDarkMode ? Colors.purple : Colors.blue,
+                  width: 2,
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    widget.isDarkMode ? 'Light Mode' : 'Dark Mode',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
